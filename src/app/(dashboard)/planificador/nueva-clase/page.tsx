@@ -14,7 +14,6 @@ export default function NewClassPage() {
     title: "",
     institution: "",
     teacher: "",
-    level: "",
     description: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,14 +45,14 @@ export default function NewClassPage() {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errorMessage) setErrorMessage(null); // Limpiar mensaje de error al editar
   };
 
   const handleSubmit = async () => {
-    if (!selectedFile || !formData.title || !formData.institution || !formData.teacher || !formData.level) {
+    if (!selectedFile || !formData.title || !formData.institution || !formData.teacher) {
       toast.error("Por favor, completa todos los campos obligatorios (*) y sube un video.", {
         position: "bottom-right",
         autoClose: 3000,
@@ -81,7 +80,6 @@ export default function NewClassPage() {
     formDataToSend.append("title", formData.title);
     formDataToSend.append("institution", formData.institution);
     formDataToSend.append("teacher", formData.teacher);
-    formDataToSend.append("level", formData.level);
     formDataToSend.append("description", formData.description);
     formDataToSend.append("video", selectedFile);
 
@@ -94,7 +92,6 @@ export default function NewClassPage() {
         title: formData.title,
         institution: formData.institution,
         teacher: formData.teacher,
-        level: formData.level,
         status: "En revisión",
         createdAt: new Date().toISOString(),
         videos: selectedFile ? [selectedFile.name] : [], // Añadir nombre del video
@@ -206,23 +203,6 @@ export default function NewClassPage() {
                 className="mt-2 p-3 block w-full rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Ej. Juan Pérez"
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Nivel <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="level"
-                value={formData.level}
-                onChange={handleInputChange}
-                className="mt-2 p-3 block w-full rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">Selecciona un nivel</option>
-                <option value="Inicial">Inicial</option>
-                <option value="Primaria">Primaria</option>
-                <option value="Secundaria">Secundaria</option>
-                <option value="Superior">Superior</option>
-              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Descripción</label>
