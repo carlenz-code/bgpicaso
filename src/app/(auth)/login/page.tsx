@@ -35,8 +35,16 @@ export default function LoginPage() {
 
       console.log("📦 Cuerpo de respuesta:", response);
 
-      if (res.ok && response.status_code === 200) {
+      if (res.ok && response.status_code === 200 && response.user_id) {
         localStorage.setItem("token", response.token);
+        localStorage.setItem("user_id", response.user_id);
+
+        const userRes = await fetch(`https://back-sgce.onrender.com/user/${response.user_id}`);
+        const userData = await userRes.json();
+
+        console.log("👤 Datos del usuario:", userData);
+
+        localStorage.setItem("user_info", JSON.stringify(userData));
 
         toast.success("Login exitoso!", {
           position: "bottom-right",
