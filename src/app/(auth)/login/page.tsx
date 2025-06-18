@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { CheckCircleIcon, InformationCircleIcon  } from "@heroicons/react/24/outline";
+import { CheckCircleIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -21,11 +21,23 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      // Simulación de llamada al backend (reemplazar con tu API)
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simula delay
-      const response = { success: true }; // Simulación de respuesta exitosa
+      console.log("🔄 Enviando solicitud al API con:", formData);
 
-      if (response.success) {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      console.log("📩 Respuesta recibida:", res);
+
+      const response = await res.json();
+
+      console.log("📦 Cuerpo de respuesta:", response);
+
+      if (res.ok && response.status_code === 200) {
+        localStorage.setItem("token", response.token);
+
         toast.success("Login exitoso!", {
           position: "bottom-right",
           autoClose: 3000,
@@ -43,10 +55,15 @@ export default function LoginPage() {
           },
           icon: <CheckCircleIcon className="h-6 w-6 text-black mr-2" />,
         });
-        // Redirigir después de login (ajustar ruta según tu app)
+
         router.push("/planificador/nueva-clase");
+      } else {
+        console.error("❌ Login fallido. Estado:", res.status, "Respuesta:", response);
+        throw new Error("Credenciales inválidas");
       }
     } catch (error) {
+      console.error("🧨 Error en login:", error);
+
       toast.error("Error en el login. Verifica tus credenciales.", {
         position: "bottom-right",
         autoClose: 3000,
