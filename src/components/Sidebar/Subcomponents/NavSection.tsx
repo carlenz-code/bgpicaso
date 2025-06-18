@@ -1,4 +1,5 @@
 "use client";
+
 import { ReactElement } from "react";
 import {
   CubeTransparentIcon,
@@ -9,6 +10,7 @@ import {
   InformationCircleIcon,
   ChevronRightIcon,
 } from "@heroicons/react/24/outline";
+import Link from "next/link"; // Importar Link de Next.js
 
 interface NavSectionProps {
   role: string;
@@ -20,8 +22,8 @@ const NavSection: React.FC<NavSectionProps> = ({ role, isCollapsed }): ReactElem
     {
       title: { collapsed: "PL", expanded: "Planificador" },
       items: [
-        { name: "Nueva clase", icon: CubeTransparentIcon },
-        { name: "Clases creadas", icon: BookmarkIcon },
+        { name: "Nueva clase", icon: CubeTransparentIcon, path: "/planificador/nueva-clase" },
+        { name: "Clases creadas", icon: BookmarkIcon, path: "/planificador/clases-creadas" },
       ],
       roles: ["planner", "auditor"], // Visible para planificador y auditor
     },
@@ -29,7 +31,7 @@ const NavSection: React.FC<NavSectionProps> = ({ role, isCollapsed }): ReactElem
       ? [
           {
             title: { collapsed: "AU", expanded: "Auditor" },
-            items: [{ name: "Entradas", icon: BookOpenIcon }],
+            items: [{ name: "Entradas", icon: BookOpenIcon, path: "/auditor/entradas" }],
             roles: ["auditor"], // Solo para auditor
           },
         ]
@@ -37,15 +39,15 @@ const NavSection: React.FC<NavSectionProps> = ({ role, isCollapsed }): ReactElem
     {
       title: { collapsed: "IN", expanded: "Información" },
       items: [
-        { name: "Rúbrica", icon: CheckBadgeIcon },
-        { name: "Guía de uso", icon: MapIcon },
-        { name: "Ayuda", icon: InformationCircleIcon },
+        { name: "Rúbrica", icon: CheckBadgeIcon, path: "/informacion/rubrica" },
+        { name: "Guía de uso", icon: MapIcon, path: "/informacion/guia-de-uso" },
+        { name: "Ayuda", icon: InformationCircleIcon, path: "/informacion/ayuda" },
       ],
       roles: ["default", "planner", "auditor"], // Visible para todos
     },
   ];
 
-  const positionTooltip = (e: React.MouseEvent<HTMLButtonElement>, tooltip: HTMLElement) => {
+  const positionTooltip = (e: React.MouseEvent<HTMLAnchorElement>, tooltip: HTMLElement) => {
     if (tooltip) {
       tooltip.style.display = "block";
       const buttonRect = e.currentTarget.getBoundingClientRect();
@@ -68,7 +70,8 @@ const NavSection: React.FC<NavSectionProps> = ({ role, isCollapsed }): ReactElem
             const Icon = item.icon;
             return (
               <div className="relative group" key={item.name}>
-                <button
+                <Link
+                  href={item.path}
                   className={`text-base w-full text-left p-2 text-black hover:bg-gray-100 rounded-xl flex items-center ${
                     isCollapsed ? "justify-center space-x-2" : "space-x-3"
                   } h-10`}
@@ -88,7 +91,7 @@ const NavSection: React.FC<NavSectionProps> = ({ role, isCollapsed }): ReactElem
                 >
                   <Icon className="h-5 w-5" />
                   {!isCollapsed && <span className="ml-2">{item.name}</span>}
-                </button>
+                </Link>
                 {isCollapsed && (
                   <span
                     className="hidden bg-sidebar-tooltip-bg text-brand-text text-xs px-2 py-1 rounded-md shadow-md whitespace-nowrap z-50 before:content-[''] before:absolute before:border-8 before:border-t-transparent before:border-b-transparent before:border-l-0 before:border-r-sidebar-tooltip-bg before:-left-2 before:top-1/2 before:-translate-y-1/2"
