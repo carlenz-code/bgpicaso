@@ -12,11 +12,6 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ onCollapseToggle }): ReactElement => {
   const { role } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const user = {
-    name: "Carlo Farfán",
-    email: "carlogf@gmail.com",
-    image: "/path-to-user-image.jpg",
-  };
 
   const toggleCollapse = () => {
     const newCollapsedState = !isCollapsed;
@@ -34,7 +29,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onCollapseToggle }): ReactElement => 
       <div className="flex-1 overflow-y-auto">
         <NavSection role={role} isCollapsed={isCollapsed} />
       </div>
-      <ActionButtons role={role} className="flex-shrink-0" user={user} isCollapsed={isCollapsed} />
+      <ActionButtons role={role} className="flex-shrink-0"  isCollapsed={isCollapsed} />
     </div>
   );
 };
