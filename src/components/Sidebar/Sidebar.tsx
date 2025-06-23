@@ -22,7 +22,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onCollapseToggle }): ReactElement => 
   return (
     <div
       className={`h-screen bg-white border-r border-border-light flex flex-col fixed top-0 ${
-        isCollapsed ? "w-20" : "w-64"
+        isCollapsed ? "w-20" : "w-60"
       } transition-all duration-300`}
     >
       <Header className="flex-shrink-0" isCollapsed={isCollapsed} onToggleCollapse={toggleCollapse} />

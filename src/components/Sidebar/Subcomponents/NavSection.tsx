@@ -72,7 +72,7 @@ const NavSection: React.FC<NavSectionProps> = ({ role, isCollapsed }): ReactElem
               <div className="relative group" key={item.name}>
                 <Link
                   href={item.path}
-                  className={`text-base w-full text-left p-2 text-black hover:bg-gray-100 rounded-xl flex items-center ${
+                  className={`text-base w-full text-left p-2 text-black hover:bg-blue-50 rounded-xl flex items-center ${
                     isCollapsed ? "justify-center space-x-2" : "space-x-3"
                   } h-10`}
                   onMouseEnter={(e) => {

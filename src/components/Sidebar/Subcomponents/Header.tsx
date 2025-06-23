@@ -10,7 +10,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ className, isCollapsed, onToggleCollapse }): ReactElement => {
   return (
-    <div className={`p-4 border-b border-border-light bg-white ${className}`}>
+    <div className={`p-4  bg-white ${className}`}>
       {isCollapsed ? (
         // Layout para estado colapsado
 
@@ -19,7 +19,7 @@ const Header: React.FC<HeaderProps> = ({ className, isCollapsed, onToggleCollaps
 
           <div className="flex items-center space-x-3 cursor-pointer mb-4" onClick={onToggleCollapse}>
             <div className="w-10 h-10 bg-gradient-to-br from-brand-gradient-from to-brand-gradient-to rounded-xl flex items-center justify-center">
-              <span className="text-sm text-brand-text font-bold">p</span>
+              <span className="text-sm text-white font-bold">p</span>
             </div>
           </div>
 
@@ -32,12 +32,12 @@ const Header: React.FC<HeaderProps> = ({ className, isCollapsed, onToggleCollaps
         </div>
       ) : (
         // Layout para estado expandido (normal)
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-12">
 
           <div className="flex items-center space-x-3">
             
             <div className="w-10 h-10 bg-gradient-to-br from-brand-gradient-from to-brand-gradient-to rounded-xl flex items-center justify-center">
-              <span className="text-sm text-brand-text font-bold">p</span>
+              <span className="text-sm text-white font-bold">p</span>
             </div>
 
 
