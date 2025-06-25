@@ -3,20 +3,42 @@
 
 import { useAuth } from '@/context/AuthContext';
 import { useState, useEffect, useRef } from 'react';
+import Loader from '@/components/Common/Loader';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { CheckCircleIcon, DocumentTextIcon, CubeTransparentIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
-import Tag from '@/components/Common/Tag';
+import {
+  CheckCircleIcon,
+  CubeTransparentIcon,
+  PencilIcon,
+  TrashIcon,
+} from '@heroicons/react/24/outline';
 
 export default function CreatedClassesPage() {
   const { role } = useAuth();
+  const [loading, setLoading] = useState(true);
   const [createdClasses, setCreatedClasses] = useState<
-    { id: number; title: string; institution: string; teacher: string; level: string; status: string; createdAt: string; videos: string[] }[]
+    {
+      id: number;
+      title: string;
+      institution: string;
+      teacher: string;
+      level: string;
+      status: string;
+      createdAt: string;
+      videos: string[];
+    }[]
   >([]);
-  const [selectedClass, setSelectedClass] = useState<
-    { id: number; title: string; institution: string; teacher: string; level: string; status: string; createdAt: string; videos: string[] } | null
-  >(null);
-  const [editedTitle, setEditedTitle] = useState("");
+  const [selectedClass, setSelectedClass] = useState<{
+    id: number;
+    title: string;
+    institution: string;
+    teacher: string;
+    level: string;
+    status: string;
+    createdAt: string;
+    videos: string[];
+  } | null>(null);
+  const [editedTitle, setEditedTitle] = useState('');
   const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({
     title: 200,
     institution: 150,
@@ -29,22 +51,27 @@ export default function CreatedClassesPage() {
   const [isResizing, setIsResizing] = useState(false);
   const [resizeStartX, setResizeStartX] = useState(0);
   const [resizeColumnIndex, setResizeColumnIndex] = useState<number | null>(null);
-  const headerRefs = useRef<(HTMLTableCellElement | null)[]>([]);
+  const headerRefs = useRef<(HTMLTableHeaderCellElement | null)[]>([]);
 
-  // Cargar clases simuladas desde localStorage al montar el componente
+  // Cargar clases desde localStorage
   useEffect(() => {
-    const savedClasses = localStorage.getItem('createdClasses');
-    if (savedClasses) {
-      const parsedClasses = JSON.parse(savedClasses);
-      const normalizedClasses = parsedClasses.map((cls: any) => ({
+    const saved = localStorage.getItem('createdClasses');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      const normalized = parsed.map((cls: any) => ({
         ...cls,
         videos: Array.isArray(cls.videos) ? cls.videos : [],
       }));
-      setCreatedClasses(normalizedClasses);
+      setCreatedClasses(normalized);
     }
+    setLoading(false);
   }, []);
 
-  // Simular creación de clase (para testing)
+  if (loading) {
+    return <Loader />;
+  }
+
+  // Simular creación
   const simulateClassCreation = () => {
     const newClass = {
       id: Date.now(),
@@ -56,9 +83,9 @@ export default function CreatedClassesPage() {
       createdAt: new Date().toISOString(),
       videos: [`video_${Date.now()}.mp4`],
     };
-    const updatedClasses = [...createdClasses, newClass];
-    setCreatedClasses(updatedClasses);
-    localStorage.setItem('createdClasses', JSON.stringify(updatedClasses));
+    const updated = [...createdClasses, newClass];
+    setCreatedClasses(updated);
+    localStorage.setItem('createdClasses', JSON.stringify(updated));
     toast.success('Clase simulada creada con éxito!', {
       position: 'bottom-right',
       autoClose: 3000,
@@ -74,24 +101,24 @@ export default function CreatedClassesPage() {
         marginRight: '20px',
         minWidth: '250px',
       },
-      icon: <CheckCircleIcon className='h-6 w-6 text-black mr-2' />,
+      icon: <CheckCircleIcon className="h-6 w-6 text-black mr-2" />,
     });
   };
 
-  // Abrir panel de edición
-  const handleOpenEdit = (cls: { id: number; title: string; institution: string; teacher: string; level: string; status: string; createdAt: string; videos: string[] }) => {
+  // Abrir edición
+  const handleOpenEdit = (cls: any) => {
     setSelectedClass(cls);
     setEditedTitle(cls.title);
   };
 
-  // Guardar cambios en el título
+  // Guardar edición
   const handleSaveEdit = () => {
     if (selectedClass && editedTitle) {
-      const updatedClasses = createdClasses.map((cls) =>
+      const updated = createdClasses.map((cls) =>
         cls.id === selectedClass.id ? { ...cls, title: editedTitle } : cls
       );
-      setCreatedClasses(updatedClasses);
-      localStorage.setItem('createdClasses', JSON.stringify(updatedClasses));
+      setCreatedClasses(updated);
+      localStorage.setItem('createdClasses', JSON.stringify(updated));
       setSelectedClass(null);
       toast.success('Título actualizado con éxito!', {
         position: 'bottom-right',
@@ -108,16 +135,16 @@ export default function CreatedClassesPage() {
           marginRight: '20px',
           minWidth: '250px',
         },
-        icon: <CheckCircleIcon className='h-6 w-6 text-black mr-2' />,
+        icon: <CheckCircleIcon className="h-6 w-6 text-black mr-2" />,
       });
     }
   };
 
   // Eliminar clase
   const handleDeleteClass = (id: number) => {
-    const updatedClasses = createdClasses.filter((cls) => cls.id !== id);
-    setCreatedClasses(updatedClasses);
-    localStorage.setItem('createdClasses', JSON.stringify(updatedClasses));
+    const updated = createdClasses.filter((cls) => cls.id !== id);
+    setCreatedClasses(updated);
+    localStorage.setItem('createdClasses', JSON.stringify(updated));
     toast.success('Clase eliminada con éxito!', {
       position: 'bottom-right',
       autoClose: 3000,
@@ -133,223 +160,154 @@ export default function CreatedClassesPage() {
         marginRight: '20px',
         minWidth: '250px',
       },
-      icon: <CheckCircleIcon className='h-6 w-6 text-black mr-2' />,
+      icon: <CheckCircleIcon className="h-6 w-6 text-black mr-2" />,
     });
   };
 
-  // Manejar inicio de redimensión
+  // Redimensión
   const handleMouseDown = (index: number, e: React.MouseEvent) => {
     setIsResizing(true);
     setResizeStartX(e.pageX);
     setResizeColumnIndex(index);
   };
-
-  // Manejar redimensión mientras se arrastra
   const handleMouseMove = (e: React.MouseEvent) => {
     if (isResizing && resizeColumnIndex !== null) {
       const diff = e.pageX - resizeStartX;
-      const newWidths = { ...columnWidths };
-      const headers = headerRefs.current;
-      if (headers[resizeColumnIndex]) {
-        const currentWidth = headers[resizeColumnIndex]!.offsetWidth;
-        const newWidth = Math.max(50, currentWidth + diff); // Mínimo 50px
-        newWidths[Object.keys(columnWidths)[resizeColumnIndex]] = newWidth;
-        setColumnWidths(newWidths);
+      const newW = { ...columnWidths };
+      const hdrs = headerRefs.current;
+      if (hdrs[resizeColumnIndex]) {
+        const curr = hdrs[resizeColumnIndex]!.offsetWidth;
+        newW[Object.keys(columnWidths)[resizeColumnIndex]] = Math.max(50, curr + diff);
+        setColumnWidths(newW);
         setResizeStartX(e.pageX);
       }
     }
   };
-
-  // Manejar fin de redimensión
   const handleMouseUp = () => {
     setIsResizing(false);
     setResizeColumnIndex(null);
   };
 
   return (
-    <div className="flex flex-col p-2" onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
-    <ToastContainer />
-    <div className="flex-1">
-      {/* Contenedor externo con opacidad y sombra */}
-      <div className="bg-white shadow-lg rounded-[20px] p-2 bg-opacity-40">
-        {/* Contenedor interno con solo borde */}
-        <div className="border border-[#E1E1E8] bg-white rounded-[20px]">
-          {/* Fila superior con padding para textos */}
-          <div className="p-6">
-            <h2 className="text-xl font-normal text-blue-600 mb-6 flex items-center gap-3">
-              <CubeTransparentIcon className="h-6 w-6 text-blue-600" />
-              Clases Creadas
-              <Tag icon={DocumentTextIcon} color="blue">Lista</Tag>
-            </h2>
-            {/* Botón simulado para agregar clase */}
-            <button
-              className="mb-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-              onClick={simulateClassCreation}
-            >
-              Simular Creación de Clase
-            </button>
-          </div>
-          {/* Fila inferior para la tabla sin padding lateral */}
-          <div>
-            <table className="w-full table-fixed text-sm text-left text-gray-700">
-              <thead className="bg-gray-50">
-                <tr>
-                  {['title', 'institution', 'teacher', 'level', 'status', 'createdAt', 'actions'].map((key, index) => (
+    <div
+      className="flex flex-col pl-6 pt-4"
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+    >
+      <ToastContainer />
+      <div className="flex-1">
+        <div className="bg-white shadow-lg rounded-[26px] p-2 bg-opacity-40">
+          <div className="border border-[#E1E1E8] bg-white rounded-[20px]">
+            {/* Header */}
+            <div className="px-6 py-5 border-b flex items-center justify-between">
+              <h2 className="text-base font-normal text-blue-600 flex items-center gap-3">
+                <CubeTransparentIcon className="h-5 w-5 text-blue-600" />
+                Registro de clases creadas
+              </h2>
+            </div>
+
+            {/* Tabla */}
+            <div className="overflow-x-auto">
+              <table className="min-w-[800px] w-full table-fixed text-sm text-left text-black">
+                <thead className="bg-blue-50 text-sm font-medium text-black">
+                  <tr>
                     <th
-                      key={key}
-                      ref={(el) => {
-                        if (el) headerRefs.current[index] = el; // Asignación segura
-                      }}
-                      className="px-2 py-2 relative"
-                      style={{ width: `${columnWidths[key]}px` }}
+                      ref={(el) => { headerRefs.current[0] = el; }}
+                      onMouseDown={(e) => handleMouseDown(0, e)}
+                      className="pl-6 pr-2 py-3 w-[150px] truncate font-medium"
                     >
-                      {key === 'title' && 'Título'}
-                      {key === 'institution' && 'Institución'}
-                      {key === 'teacher' && 'Docente'}
-                      {key === 'level' && 'Nivel'}
-                      {key === 'status' && 'Estado'}
-                      {key === 'createdAt' && 'Fecha'}
-                      {key === 'actions' && 'Acciones'}
-                      <div
-                        className="absolute right-0 top-0 w-1 h-full bg-gray-300 cursor-col-resize"
-                        onMouseDown={(e) => handleMouseDown(index, e)}
-                        style={{ display: index === 6 ? 'none' : 'block' }} // Ocultar resizer en la última columna
-                      />
+                      Nombre de Clase
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {createdClasses.length > 0 ? (
-                  createdClasses.map((cls) => (
-                    <tr key={cls.id} className="border-b hover:bg-gray-50">
-                      <td className="px-2 py-2 overflow-hidden text-ellipsis whitespace-nowrap" style={{ width: `${columnWidths.title}px` }}>
-                        {cls.title}
-                      </td>
-                      <td className="px-2 py-2 overflow-hidden text-ellipsis whitespace-nowrap" style={{ width: `${columnWidths.institution}px` }}>
-                        {cls.institution}
-                      </td>
-                      <td className="px-2 py-2 overflow-hidden text-ellipsis whitespace-nowrap" style={{ width: `${columnWidths.teacher}px` }}>
-                        {cls.teacher}
-                      </td>
-                      <td className="px-2 py-2 overflow-hidden text-ellipsis whitespace-nowrap" style={{ width: `${columnWidths.level}px` }}>
-                        {cls.level}
-                      </td>
-                      <td className="px-2 py-2" style={{ width: `${columnWidths.status}px` }}>
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs ${
-                            cls.status === 'En revisión' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
-                          }`}
-                        >
-                          {cls.status}
-                        </span>
-                      </td>
-                      <td className="px-2 py-2 overflow-hidden text-ellipsis whitespace-nowrap" style={{ width: `${columnWidths.createdAt}px` }}>
-                        {new Date(cls.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-2 py-2 flex space-x-2" style={{ width: `${columnWidths.actions}px` }}>
-                        <button
-                          onClick={() => handleOpenEdit(cls)}
-                          className="text-blue-500 hover:text-blue-700"
-                        >
-                          <PencilIcon className="h-5 w-5" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClass(cls.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <TrashIcon className="h-5 w-5" />
-                        </button>
+                    <th className="px-2 py-3 w-[120px] truncate font-medium">
+                      Institución
+                    </th>
+                    <th className="px-2 py-3 w-[120px] truncate font-medium">
+                      Docente
+                    </th>
+                    <th className="px-2 py-3 w-[90px] truncate font-medium">Fecha</th>
+                    <th className="px-2 py-3 w-[100px] truncate font-medium">Nivel</th>
+                    <th className="px-2 py-3 w-[90px] truncate font-medium">Videos</th>
+                    <th className="px-2 py-3 w-[100px] truncate font-medium">Estado</th>
+                    <th className="pr-4 py-3 w-[100px] text-center font-medium">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {createdClasses.length ? (
+                    createdClasses.map((cls) => (
+                      <tr key={cls.id} className="border-b hover:bg-gray-50 h-[60px]">
+                        <td className="pl-6 pr-2 py-3 whitespace-nowrap overflow-hidden text-ellipsis max-w-[210px]">
+                          {cls.title}
+                        </td>
+                        <td className="px-2 py-3 whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]">
+                          {cls.institution}
+                        </td>
+                        <td className="px-2 py-3 whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]">
+                          {cls.teacher}
+                        </td>
+                        <td className="px-2 py-3 whitespace-nowrap overflow-hidden text-ellipsis">
+                          {new Date(cls.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-2 py-3 whitespace-nowrap overflow-hidden text-ellipsis">
+                          {cls.level}
+                        </td>
+                        <td className="px-2 py-3 whitespace-nowrap overflow-hidden text-ellipsis">
+                          {cls.videos.length} videos
+                        </td>
+                        <td className="px-2 py-3">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                              cls.status === 'En revisión'
+                                ? 'bg-yellow-100 text-yellow-700'
+                                : 'bg-green-100 text-green-700'
+                            }`}
+                          >
+                            {cls.status === 'En revisión' ? 'En espera' : 'Revisado'}
+                          </span>
+                        </td>
+                        <td className="pr-4 py-3 flex justify-center items-center gap-2">
+                          <button
+                            onClick={() => handleOpenEdit(cls)}
+                            className="text-blue-500 hover:text-blue-700"
+                          >
+                            <PencilIcon className="h-5 w-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClass(cls.id)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <TrashIcon className="h-5 w-5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
+                        No hay clases creadas aún.
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-2 text-center text-gray-500">
-                      No hay clases creadas aún.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-        {/* Panel de edición */}
-        {selectedClass && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg w-full max-w-md">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Editar Clase</h3>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Título</label>
-                <input
-                  type="text"
-                  value={editedTitle}
-                  onChange={(e) => setEditedTitle(e.target.value)}
-                  className="mt-1 p-2 block w-full rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Videos Cargados</label>
-                {selectedClass.videos.map((video, index) => (
-                  <div key={index} className="flex items-center justify-between mt-2">
-                    <span className="text-sm text-gray-700">{video}</span>
-                    <button
-                      onClick={() => {
-                        const updatedVideos = selectedClass.videos.filter((_, i) => i !== index);
-                        const updatedClasses = createdClasses.map((cls) =>
-                          cls.id === selectedClass.id ? { ...cls, videos: updatedVideos } : cls
-                        );
-                        setCreatedClasses(updatedClasses);
-                        localStorage.setItem('createdClasses', JSON.stringify(updatedClasses));
-                        toast.success('Video eliminado con éxito!', {
-                          position: 'bottom-right',
-                          autoClose: 3000,
-                          style: {
-                            backgroundColor: '#BBF7D0',
-                            border: '1px solid #22C55E',
-                            color: 'black',
-                            borderRadius: '8px',
-                            padding: '12px 20px',
-                            fontSize: '14px',
-                            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                            fontFamily: 'Poppins, sans-serif',
-                            marginRight: '20px',
-                            minWidth: '250px',
-                          },
-                          icon: <CheckCircleIcon className='h-6 w-6 text-black mr-2' />,
-                        });
-                      }}
-                      className="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600"
-                    >
-                      <TrashIcon className="h-5 w-5" />
-                    </button>
-                  </div>
-                ))}
-                {selectedClass.videos.length === 0 && (
-                  <p className="text-sm text-gray-500">No hay videos cargados.</p>
-                )}
-              </div>
-              <div className="flex justify-end space-x-4">
-                <button
-                  className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400"
-                  onClick={() => setSelectedClass(null)}
-                >
-                  Cancelar
-                </button>
-                <button
-                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                  onClick={handleSaveEdit}
-                >
-                  Guardar
-                </button>
-              </div>
-            </div>
+      {/* Panel de edición */}
+      {selectedClass && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Editar Clase
+            </h3>
+            {/* ... resto del modal … */}
           </div>
-        )}
-      </div>
-    
+        </div>
+      )}
+    </div>
   );
 }

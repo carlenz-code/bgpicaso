@@ -50,10 +50,7 @@ const Header: React.FC<HeaderProps> = ({ className, isCollapsed, onToggleCollaps
             <button className="text-black hover:text-text-muted" onClick={onToggleCollapse}>
               <ArrowsRightLeftIcon className="h-6 w-6" />
             </button>
-            <button className="text-black hover:text-text-muted relative flex items-center justify-center">
-              <BellIcon className="h-6 w-6" />
-              <span className="absolute top-0 right-0 h-2 w-2 bg-notification-dot rounded-full"></span>
-            </button>
+           
           </div>
         </div>
       )}
