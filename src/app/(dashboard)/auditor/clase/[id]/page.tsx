@@ -1,86 +1,82 @@
-'use client';
+'use client'
 
-import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import ClaseHeader from '@/components/Auditor/ClaseHeader';
-import ResumenTab from '@/components/Auditor/ResumenTab';
-import ResultadoTab from '@/components/Auditor/ResultadoTab';
-import RetroalimentacionTab from '@/components/Auditor/RetroalimentacionTab';
+import { useParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import ClaseHeader from '@/components/Auditor/ClaseHeader'
+import ResumenTab from '@/components/Auditor/ResumenTab'
+import ResultadoTab from '@/components/Auditor/ResultadoTab'
+import RetroalimentacionTab from '@/components/Auditor/RetroalimentacionTab'
 
 import {
   PencilIcon,
   ArchiveBoxIcon,
   WrenchScrewdriverIcon,
-} from '@heroicons/react/24/outline';
+} from '@heroicons/react/24/outline'
 
 const TABS = [
   { label: 'Resumen', icon: PencilIcon },
   { label: 'Resultado', icon: ArchiveBoxIcon },
   { label: 'Retroalimentación', icon: WrenchScrewdriverIcon },
-] as const;
+] as const
 
-type Tab = typeof TABS[number]['label'];
+type Tab = typeof TABS[number]['label']
 
 export default function ClaseDetallePage() {
-  const { id } = useParams();
-  const [activeTab, setActiveTab] = useState<Tab>('Resumen');
-  const [classData, setClassData] = useState<any>(null);
+  const { id } = useParams()
+  const [activeTab, setActiveTab] = useState<Tab>('Resumen')
+  const [classData, setClassData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const stored = localStorage.getItem('createdClasses');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      const found = parsed.find((c: any) => c.id.toString() === id);
+    const fetchClass = async () => {
+      try {
+        const res = await fetch(`https://back-sgce.onrender.com/sesion/get-details/${id}`)
+        const data = await res.json()
 
-      if (found) {
-        // ==== MOCKS PARA TESTEAR ====
-        if (!found.resumen) {
-          found.resumen = `Inicio
+        // MOCKS TEMPORALES
+        data.resumen = `Inicio
 La clase comenzó con una dinámica de reflexión sobre las emociones de la literatura. Se preguntó: “¿Qué libro te ha marcado y por qué?”.
 
 Desarrollo
 Se analizó el cuento “La casa de Asterión” de Borges, discutiendo sus símbolos y promoviendo el debate en grupos.
 
 Cierre
-Se hizo puesta en común y se reflexionó sobre cómo Borges transforma mitos clásicos.`;
-        }
-        if (!found.proposito) {
-          found.proposito =
-            'Analizar “La casa de Asterión” para fortalecer la interpretación crítica y el debate literario en los estudiantes.';
-        }
-        if (!found.resultados) {
-          found.resultados = [
-            {
-              id: 'planificacion',
-              estado: 'En inicio',
-              porcentaje: 8,
-              observaciones: 'Faltó presentar claramente los objetivos al inicio de la sesión.',
-              recomendaciones: 'IntroduCir objetivos antes de comenzar la clase.',
-            },
-            {
-              id: 'participacion',
-              estado: 'En Proceso',
-              porcentaje: 65,
-              observaciones: 'Participación intermitente de algunos estudiantes.',
-              recomendaciones: 'Formular preguntas abiertas para invitar a todos.',
-            },
-          ];
-        }
-        if (!found.retroalimentacion) {
-          found.retroalimentacion = `El profesor demuestra una planificación clara de los aprendizajes esperados, aunque algunos podrían ser más específicos y medibles. Se sugiere...
-          (aquí tu texto largo de retroalimentación)`;
-        }
-        // =============================
+Se hizo puesta en común y se reflexionó sobre cómo Borges transforma mitos clásicos.`
+        data.proposito = 'Analizar “La casa de Asterión” para fortalecer la interpretación crítica y el debate literario en los estudiantes.'
+        data.resultados = [
+          {
+            id: 1,
+            estado: 'En inicio',
+            porcentaje: 8,
+            observaciones: 'Faltó presentar claramente los objetivos al inicio de la sesión.',
+            recomendaciones: 'Introducir objetivos antes de comenzar la clase.',
+          },
+          {
+            id: 2,
+            estado: 'En Proceso',
+            porcentaje: 65,
+            observaciones: 'Participación intermitente de algunos estudiantes.',
+            recomendaciones: 'Formular preguntas abiertas para invitar a todos.',
+          },
+        ]
+        data.retroalimentacion = `El profesor demuestra una planificación clara de los aprendizajes esperados, aunque algunos podrían ser más específicos y medibles. Se sugiere...`
 
-        setClassData(found);
+        setClassData(data)
+      } catch (err) {
+        console.error('Error al obtener clase:', err)
+      } finally {
+        setLoading(false)
       }
     }
-  }, [id]);
+
+    fetchClass()
+  }, [id])
+
+  if (loading) return <p className="p-4">Cargando clase...</p>
 
   return (
     <div className="flex flex-col bg-white rounded-xl">
-      {/* Header con título */}
-      {classData && <ClaseHeader title={classData.title} />}
+      {classData && <ClaseHeader title={classData.titulo} />}
 
       {/* Tabs con íconos */}
       <div className="flex space-x-6 border-b border-gray-200 px-6 pt-6">
@@ -113,5 +109,5 @@ Se hizo puesta en común y se reflexionó sobre cómo Borges transforma mitos cl
         )}
       </div>
     </div>
-  );
+  )
 }

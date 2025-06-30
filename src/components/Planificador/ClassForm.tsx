@@ -30,7 +30,9 @@ export default function ClassForm({ mode, initialData, onSubmit }: Props) {
     level: '',
     description: '',
   })
+  const [teachers, setTeachers] = useState<{ id: number; nombre_completo: string }[]>([])
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const isReadOnly = mode === 'view'
 
   useEffect(() => {
@@ -45,7 +47,23 @@ export default function ClassForm({ mode, initialData, onSubmit }: Props) {
     }
   }, [initialData])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  useEffect(() => {
+    const fetchTeachers = async () => {
+      try {
+        const res = await fetch('https://back-sgce.onrender.com/user/docentes')
+        const data = await res.json()
+        setTeachers(data)
+      } catch (error) {
+        console.error('Error al cargar docentes:', error)
+      }
+    }
+
+    fetchTeachers()
+  }, [])
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
@@ -74,21 +92,53 @@ export default function ClassForm({ mode, initialData, onSubmit }: Props) {
     }
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedFile || !formData.title || !formData.institution || !formData.teacher || !formData.level) {
       toast.error('Por favor, completa todos los campos obligatorios (*) y sube un video.')
       return
     }
 
-    const newClass: ClassData = {
-      ...formData,
-      id: Date.now(),
-      createdAt: new Date().toISOString(),
-      status: 'En revisión',
-      videos: selectedFile ? [selectedFile.name] : [],
-    }
+    const formDataToSend = new FormData()
+    formDataToSend.append('titulo', formData.title)
+    formDataToSend.append('institucion', formData.institution)
+    formDataToSend.append('nivel', formData.level)
+    formDataToSend.append('fecha_dictada', new Date().toISOString().split('T')[0])
+    formDataToSend.append('duracion_video', '2.30') // puedes reemplazar por duración real si la tienes
+    formDataToSend.append('descripcion', formData.description || '')
+    formDataToSend.append('grabacion', selectedFile)
+    formDataToSend.append('id_user', '6') // cambiar si obtienes el ID dinámicamente
 
-    if (onSubmit) onSubmit(newClass)
+    try {
+      setIsSubmitting(true)
+
+      const res = await fetch('https://back-sgce.onrender.com/sesion/create-firebase', {
+        method: 'POST',
+        body: formDataToSend,
+      })
+
+      const result = await res.json()
+
+      if (res.ok) {
+        toast.success('Clase creada correctamente!')
+        if (onSubmit) {
+          const newClass: ClassData = {
+            ...formData,
+            id: Date.now(),
+            createdAt: new Date().toISOString(),
+            status: 'En revisión',
+            videos: [selectedFile.name],
+          }
+          onSubmit(newClass)
+        }
+      } else {
+        toast.error(result.message || 'Error al crear la clase')
+      }
+    } catch (error) {
+      console.error('Error al enviar la clase:', error)
+      toast.error('Error al enviar la clase')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -136,15 +186,20 @@ export default function ClassForm({ mode, initialData, onSubmit }: Props) {
                   <label className="block text-sm font-medium text-gray-700">
                     Nombre del docente <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <select
                     name="teacher"
                     value={formData.teacher}
                     onChange={handleInputChange}
                     disabled={isReadOnly}
                     className="mt-2 p-3 block w-full rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Ej. Juan Pérez"
-                  />
+                  >
+                    <option value="">Selecciona un docente</option>
+                    {teachers.map((docente) => (
+                      <option key={docente.id} value={docente.nombre_completo}>
+                        {docente.nombre_completo}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
@@ -160,7 +215,7 @@ export default function ClassForm({ mode, initialData, onSubmit }: Props) {
                     <option value="">Selecciona un nivel</option>
                     <option value="Primaria">Primaria</option>
                     <option value="Secundaria">Secundaria</option>
-                    <option value="Universitario">Universitario</option>
+                    <option value="Universidad">Universidad</option>
                   </select>
                 </div>
                 <div>
@@ -211,9 +266,7 @@ export default function ClassForm({ mode, initialData, onSubmit }: Props) {
                           />
                         </label>
                       )}
-                      {selectedFile && (
-                        <p className="text-sm text-gray-700">{selectedFile.name}</p>
-                      )}
+                      {selectedFile && <p className="text-sm text-gray-700">{selectedFile.name}</p>}
                       {!selectedFile && (
                         <button
                           type="button"
@@ -229,14 +282,14 @@ export default function ClassForm({ mode, initialData, onSubmit }: Props) {
               </div>
             </div>
 
-            {/* Botón de envío */}
             {mode === 'create' && (
               <div className="mt-6 text-right">
                 <button
                   className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-blue-300"
                   onClick={handleSubmit}
+                  disabled={isSubmitting}
                 >
-                  Iniciar Proceso de Revisión
+                  {isSubmitting ? 'Enviando...' : 'Iniciar Proceso de Revisión'}
                 </button>
               </div>
             )}

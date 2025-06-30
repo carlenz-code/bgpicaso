@@ -1,13 +1,18 @@
-// src/components/Auditor/ResultadoTab.tsx
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CubeTransparentIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RUBRICA, RubricaItem } from '@/constants/rubrica';
+
+interface RubricaItem {
+  id: number;
+  criterios: string;
+  factores: string;
+  items: string;
+}
 
 interface ModeloResultado {
-  id: RubricaItem['id'];
+  id: number;
   estado: 'En inicio' | 'En Proceso' | 'Previsto' | 'Destacado';
   porcentaje: number;
   observaciones: string;
@@ -19,10 +24,31 @@ interface ResultadoTabProps {
 }
 
 export default function ResultadoTab({ resultados }: ResultadoTabProps) {
+  const [rubricas, setRubricas] = useState<RubricaItem[]>([]);
   const [modalText, setModalText] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const openModal = (text: string) => setModalText(text);
   const closeModal = () => setModalText(null);
+
+  useEffect(() => {
+    const fetchRubrica = async () => {
+      try {
+        const res = await fetch('https://back-sgce.onrender.com/rubrica');
+        const data = await res.json();
+        setRubricas(data.rubricas || []);
+      } catch (err) {
+        console.error('Error cargando rúbricas:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRubrica();
+  }, []);
+
+  if (loading) {
+    return <div className="p-4">Cargando rúbricas...</div>;
+  }
 
   return (
     <div className="flex flex-col pl-1 pt-1">
@@ -48,14 +74,14 @@ export default function ResultadoTab({ resultados }: ResultadoTabProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {RUBRICA.map((crit) => {
+                  {rubricas.map((crit) => {
                     const res = resultados.find((r) => r.id === crit.id);
                     return (
                       <tr key={crit.id} className="border-b hover:bg-gray-50 align-top">
-                        <td className="pl-6 py-3 align-top">{crit.label}</td>
+                        <td className="pl-6 py-3 align-top">{crit.criterios}</td>
                         <td className="px-2 py-3 align-top">
                           <button
-                            onClick={() => openModal(crit.descripcion)}
+                            onClick={() => openModal(crit.items)}
                             className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-xs font-medium hover:bg-blue-200"
                           >
                             Ver Detalle

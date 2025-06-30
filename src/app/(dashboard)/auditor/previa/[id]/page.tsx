@@ -23,12 +23,30 @@ export default function PreviaClasePage() {
   const [clase, setClase] = useState<Clase | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem('createdClasses');
-    if (stored) {
-      const parsed = JSON.parse(stored) as Clase[];
-      const found = parsed.find((c) => c.id === Number(id));
-      if (found) setClase(found);
-    }
+    const fetchClass = async () => {
+      try {
+        const res = await fetch(`https://back-sgce.onrender.com/sesion/get-details/${id}`);
+        const data = await res.json();
+
+        const mappedClass: Clase = {
+          id: data.id,
+          title: data.titulo,
+          institution: data.institucion,
+          teacher: data.user?.nombre_completo || '',
+          level: data.nivel,
+          description: data.descripcion || '',
+          videos: [data.grabacion],
+          status: data.auditado ? 'Revisado' : 'En revisión',
+          createdAt: data.fecha_creacion || new Date().toISOString(),
+        };
+
+        setClase(mappedClass);
+      } catch (error) {
+        console.error('Error al obtener la clase:', error);
+      }
+    };
+
+    if (id) fetchClass();
   }, [id]);
 
   const handleIniciarAuditoria = () => {
@@ -48,8 +66,8 @@ export default function PreviaClasePage() {
             <h2 className="text-base font-normal text-blue-600 mb-6">
               Vista previa de clase
             </h2>
-            <ClassForm mode="view" initialData={clase} />
 
+            <ClassForm mode="view" initialData={clase} />
 
             <div className="mt-6 text-right">
               <button

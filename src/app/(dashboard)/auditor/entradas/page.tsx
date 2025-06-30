@@ -8,13 +8,14 @@ import 'react-toastify/dist/ReactToastify.css';
 
 type Clase = {
   id: number;
-  title: string;
-  institution: string;
-  teacher: string;
-  level: string;
-  status: string;
-  createdAt: string;
-  videos: string[];
+  titulo: string;
+  institucion: string;
+  nivel: string;
+  fecha_creacion: string;
+  duracion_video: string;
+  user: {
+    nombre_completo: string;
+  };
 };
 
 export default function AuditorEntradas() {
@@ -22,17 +23,19 @@ export default function AuditorEntradas() {
   const router = useRouter();
 
   useEffect(() => {
-    const saved = localStorage.getItem('createdClasses');
-    if (saved) {
-      setClasses(JSON.parse(saved));
-    }
+    fetch('https://back-sgce.onrender.com/sesion')
+      .then((res) => res.json())
+      .then((data) => setClasses(data))
+      .catch((err) => {
+        console.error('Error cargando clases:', err);
+        toast.error('Error al cargar las clases');
+      });
   }, []);
 
   const handleDelete = (id: number) => {
     const updated = classes.filter((cls) => cls.id !== id);
     setClasses(updated);
-    localStorage.setItem('createdClasses', JSON.stringify(updated));
-    toast.success('Clase eliminada con éxito');
+    toast.success('Clase eliminada con éxito (solo en frontend)');
   };
 
   const handleView = (id: number) => {
@@ -40,6 +43,7 @@ export default function AuditorEntradas() {
   };
 
   const formatDate = (isoDate: string) => {
+    if (!isoDate) return '—';
     const date = new Date(isoDate);
     return date.toLocaleDateString('es-PE', {
       day: '2-digit',
@@ -49,7 +53,7 @@ export default function AuditorEntradas() {
   };
 
   return (
-    <div className="flex flex-col pl-6 pt-4">
+    <div className="flex flex-col pl-2 pt-2">
       <ToastContainer />
       <div className="flex-1">
         <div className="bg-white shadow-lg rounded-[26px] p-2 bg-opacity-40">
@@ -61,41 +65,33 @@ export default function AuditorEntradas() {
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-[1000px] w-full table-fixed text-sm text-left text-black">
-                <thead className="bg-blue-50 text-sm font-medium text-black">
+                <thead className="bg-blue-50 text-sm font-normal text-black">
                   <tr>
-                    <th className="pl-6 pr-2 py-3">Nombre de Clase</th>
-                    <th className="px-2 py-3">Docente</th>
-                    <th className="px-2 py-3">Institución</th>
-                    <th className="px-2 py-3">Nivel</th>
-                    <th className="px-2 py-3">Videos cargados</th>
-                    <th className="px-2 py-3">Fecha de creación</th>
-                    <th className="px-2 py-3">Estado</th>
-                    <th className="px-2 py-3 text-center">Acciones</th>
+                    <th className="pl-6 pr-2 py-3 font-medium">Nombre de Clase</th>
+                    <th className="px-2 py-3 font-medium">Docente</th>
+                    <th className="px-2 py-3 font-medium">Institución</th>
+                    <th className="px-2 py-3 font-medium">Nivel</th>
+                    <th className="px-2 py-3 font-medium">Videos cargados</th>
+                    <th className="px-2 py-3 font-medium">Fecha de creación</th>
+                    <th className="px-2 py-3 font-medium">Estado</th>
+                    <th className="px-2 py-3 text-center font-medium">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {classes.length > 0 ? (
                     classes.map((cls) => (
                       <tr key={cls.id} className="border-b hover:bg-gray-50">
-                        <td className="pl-6 pr-2 py-3">{cls.title}</td>
-                        <td className="px-2 py-3">{cls.teacher}</td>
-                        <td className="px-2 py-3">{cls.institution}</td>
-                        <td className="px-2 py-3">{cls.level}</td>
+                        <td className="pl-6 pr-2 py-3">{cls.titulo}</td>
+                        <td className="px-2 py-3">{cls.user?.nombre_completo || '—'}</td>
+                        <td className="px-2 py-3">{cls.institucion}</td>
+                        <td className="px-2 py-3">{cls.nivel}</td>
                         <td className="px-2 py-3">
-                          {cls.videos && cls.videos.length > 0
-                            ? `${cls.videos.length} archivo(s)`
-                            : '—'}
+                          {cls.duracion_video ? '1 archivo' : '—'}
                         </td>
-                        <td className="px-2 py-3">{formatDate(cls.createdAt)}</td>
+                        <td className="px-2 py-3">{formatDate(cls.fecha_creacion)}</td>
                         <td className="px-2 py-3">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                              cls.status === 'En revisión' || cls.status === 'En espera'
-                                ? 'bg-yellow-100 text-yellow-700'
-                                : 'bg-green-100 text-green-700'
-                            }`}
-                          >
-                            {cls.status === 'En revisión' ? 'En espera' : 'Revisado'}
+                          <span className="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                            Revisado
                           </span>
                         </td>
                         <td className="px-2 py-3 flex gap-3 justify-center">
