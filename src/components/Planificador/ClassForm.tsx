@@ -2,8 +2,11 @@
 
 import { useEffect, useState, Fragment } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
-import { CubeTransparentIcon, CloudArrowUpIcon, PlusIcon } from '@heroicons/react/24/outline'
+import { CubeTransparentIcon, CloudArrowUpIcon, PlusIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline'
 import { toast } from 'react-toastify'
+import { motion } from 'framer-motion'
+
+
 
 export interface RubricLevel {
   [level: string]: string
@@ -20,7 +23,8 @@ export interface ClassData {
   id?: number
   title: string
   institution: string
-  teacher: string
+  teacher: string | number  // porque ahora puede ser el ID
+
   level: string
   subject: string
   date: string
@@ -87,9 +91,70 @@ export default function ClassForm({ mode, initialData, onSubmit }: Props) {
     fetchTeachers()
   }, [])
 
+
+
+ const submitClassToAPI = async () => {
+  if (!videoFile) {
+    toast.error('Por favor, sube una grabación.')
+    return
+  }
+
+  // 🟡 Aquí obtienes el nombre completo del docente usando su ID
+  const selectedTeacherName =
+    teachers.find((t) => t.id === Number(formData.teacher))?.nombre_completo || ''
+
+  const form = new FormData()
+  form.append('titulo', formData.title)
+  form.append('institucion', formData.institution)
+  form.append('nivel', formData.level)
+  form.append('fecha_dictada', formData.date)
+  form.append('duracion_video', formData.duration.toString())
+  form.append('descripcion', `Clase de ${formData.subject} - Docente: ${selectedTeacherName}`)
+  form.append('id_user', '6') // Puedes hacerlo dinámico si tienes auth
+  form.append('grabacion', videoFile)
+
+  try {
+    const res = await fetch('https://back-sgce.onrender.com/sesion/create-firebase', {
+      method: 'POST',
+      body: form,
+    })
+
+    const data = await res.json()
+
+    if (res.ok) {
+      toast.success('Clase enviada con éxito ✅')
+
+      const fullWrappedData = {
+        evaluator_id: 1,
+        teacher_id: Number(formData.teacher),
+        video_url: data.url,
+        rubric_session: {
+          session_number: 1,
+          date: formData.date,
+          teacher: selectedTeacherName, // <- aquí lo usamos
+          subject: formData.subject,
+          duration_minutes: Number(formData.duration),
+          objectives: formData.objectives.filter(o => o.trim() !== ''),
+          activities: formData.activities.filter(act => act.activity.trim() !== ''),
+          resources: formData.resources.filter(r => r.trim() !== ''),
+          rubric: formData.rubric || [],
+        }
+      }
+
+      console.log(JSON.stringify(fullWrappedData, null, 2))
+    } else {
+      toast.error(`Error: ${data.message || 'No se pudo guardar'}`)
+    }
+  } catch (err) {
+    console.error(err)
+    toast.error('Error al enviar la clase')
+  }
+}
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    const parsedValue = e.target.type === 'number' ? Number(value) : value
+    setFormData((prev) => ({ ...prev, [name]: parsedValue }))
   }
 
   const handleArrayChange = (field: 'objectives' | 'resources', index: number, value: string) => {
@@ -125,13 +190,17 @@ export default function ClassForm({ mode, initialData, onSubmit }: Props) {
     setIsRubricModalOpen(false)
   }
 
+  const [videoFile, setVideoFile] = useState<File | null>(null)
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
       setFormData((prev) => ({ ...prev, videos: [file.name] }))
+      setVideoFile(file) // Guardamos el archivo real
       setIsVideoModalOpen(false)
     }
   }
+
 
   return (
     <div className="flex flex-col pl-6 pt-4">
@@ -147,11 +216,12 @@ export default function ClassForm({ mode, initialData, onSubmit }: Props) {
               <input name="title" placeholder="Título de la sesión" value={formData.title} onChange={handleInputChange} className={inputClass} />
               <input name="institution" placeholder="Institución" value={formData.institution} onChange={handleInputChange} className={inputClass} />
               <select name="teacher" value={formData.teacher} onChange={handleInputChange} className={inputClass}>
-                <option value="">Selecciona un docente</option>
-                {teachers.map((docente) => (
-                  <option key={docente.id} value={docente.nombre_completo}>{docente.nombre_completo}</option>
-                ))}
-              </select>
+  <option value="">Selecciona un docente</option>
+  {teachers.map((docente) => (
+    <option key={docente.id} value={docente.id}>{docente.nombre_completo}</option>
+  ))}
+</select>
+
               <select name="level" value={formData.level} onChange={handleInputChange} className={inputClass}>
                 <option value="">Selecciona un nivel</option>
                 <option value="Primaria">Primaria</option>
@@ -160,7 +230,15 @@ export default function ClassForm({ mode, initialData, onSubmit }: Props) {
               </select>
               <input name="subject" placeholder="Asignatura" value={formData.subject} onChange={handleInputChange} className={inputClass} />
               <input type="date" name="date" value={formData.date} onChange={handleInputChange} className={inputClass} />
-              <input name="duration" placeholder="Duración en minutos" value={formData.duration} onChange={handleInputChange} className={inputClass} />
+              <input
+                type="number"
+                name="duration"
+                placeholder="Duración en minutos"
+                value={formData.duration}
+                onChange={handleInputChange}
+                className={inputClass}
+              />
+
 
               <div>
                 <label className="text-sm font-medium text-gray-700">Agregar video</label>
@@ -197,8 +275,8 @@ export default function ClassForm({ mode, initialData, onSubmit }: Props) {
                 <label className="text-sm font-medium text-gray-700">Actividades cronológicas:</label>
                 {formData.activities.map((act, idx) => (
                   <div key={idx} className="flex gap-2 mt-2">
-                    <input type="number" value={act.start_min} onChange={(e) => handleActivityChange(idx, 'start_min', e.target.value)} className={`w-1/5 ${inputClass}`} placeholder="Inicio" />
-                    <input type="number" value={act.end_min} onChange={(e) => handleActivityChange(idx, 'end_min', e.target.value)} className={`w-1/5 ${inputClass}`} placeholder="Fin" />
+                    <input type="number" value={act.start_min} onChange={(e) => handleActivityChange(idx, 'start_min', e.target.value)} className={`w-1/6 ${inputClass}`} placeholder="Inicio" />
+                    <input type="number" value={act.end_min} onChange={(e) => handleActivityChange(idx, 'end_min', e.target.value)} className={`w-1/6 ${inputClass}`} placeholder="Fin" />
                     <input type="text" value={act.activity} onChange={(e) => handleActivityChange(idx, 'activity', e.target.value)} className={`flex-1 ${inputClass}`} placeholder="Descripción de la actividad" />
                   </div>
                 ))}
@@ -221,24 +299,51 @@ export default function ClassForm({ mode, initialData, onSubmit }: Props) {
         </div>
       </div>
 
-      {/* Modal de Video */}
+      {/*Modal video*/}
+
       <Transition appear show={isVideoModalOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-10" onClose={() => setIsVideoModalOpen(false)}>
+        <Dialog as="div" className="relative z-50" onClose={() => setIsVideoModalOpen(false)}>
           <Transition.Child as={Fragment}>
             <div className="fixed inset-0 bg-black bg-opacity-25" />
           </Transition.Child>
+
           <div className="fixed inset-0 overflow-y-auto">
             <div className="flex min-h-full items-center justify-center p-4 text-center">
-              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left shadow-xl">
-                <Dialog.Title className="text-lg font-medium text-gray-900">Agregar grabación</Dialog.Title>
-                <div className="mt-4">
-                  <input type="file" accept="video/*" onChange={handleFileUpload} />
-                </div>
+              <Dialog.Panel as={motion.div}
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+
+                className="w-full max-w-xl transform overflow-hidden rounded-2xl bg-white p-8 text-left shadow-xl"
+              >
+                <Dialog.Title className="text-blue-600 text-base font-medium mb-1">
+                  Sube una sesión <span className="text-red-500">*</span>
+                </Dialog.Title>
+                <p className="text-sm text-gray-400 mb-4">Carga tus sesiones de clases aquí</p>
+
+                <label htmlFor="video-upload" className="cursor-pointer block border-2 border-dashed border-gray-300 rounded-xl py-10 px-6 text-center hover:border-blue-400 transition-colors">
+                  <div className="flex flex-col items-center justify-center space-y-2">
+                    <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center">
+                      <ArrowUpTrayIcon className="w-6 h-6 text-blue-500" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-800">Carga una grabación</span>
+                    <span className="text-xs text-gray-400">(2GB MAX)</span>
+                  </div>
+                </label>
+
+                <input
+                  id="video-upload"
+                  type="file"
+                  accept="video/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
               </Dialog.Panel>
             </div>
           </div>
         </Dialog>
       </Transition>
+
 
       {/* Modal de Rúbrica */}
       <Transition appear show={isRubricModalOpen} as={Fragment}>
@@ -267,15 +372,16 @@ export default function ClassForm({ mode, initialData, onSubmit }: Props) {
       </Transition>
 
       {mode === 'create' && (
-  <div className="fixed bottom-6 right-9">
-    <button
-      onClick={() => onSubmit?.(formData)}
-      className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-2xl shadow-lg transition-all duration-200"
-    >
-      Iniciar Clase
-    </button>
-  </div>
-)}
+        <div className="fixed bottom-6 right-9">
+          <button
+            onClick={submitClassToAPI}
+
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-2xl shadow-lg transition-all duration-200"
+          >
+            Iniciar Clase
+          </button>
+        </div>
+      )}
 
     </div>
   )
