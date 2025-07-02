@@ -110,7 +110,7 @@ export default function ClassForm({ mode, initialData, onSubmit }: Props) {
   form.append('fecha_dictada', formData.date)
   form.append('duracion_video', formData.duration.toString())
   form.append('descripcion', `Clase de ${formData.subject} - Docente: ${selectedTeacherName}`)
-  form.append('id_user', '6') // Puedes hacerlo dinámico si tienes auth
+  form.append('id_user', '6') // Puedes hacerlo dinámico si tienes auth02020202
   form.append('grabacion', videoFile)
 
   try {
